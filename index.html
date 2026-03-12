@@ -1,0 +1,218 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Penalty & Interest Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #f5f5f7;
+      --card-bg: #ffffff;
+      --border-subtle: #e0e0e0;
+      --text-main: #171717;
+      --text-subtle: #555555;
+      --accent: #2563eb;
+      --accent-soft: #dbeafe;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; padding: 1.5rem; background: var(--bg); color: var(--text-main); }
+    h1 { font-size: 1.5rem; margin: 0 0 .5rem 0; }
+    .app-shell { max-width: 960px; margin: 0 auto; }
+    .card { background: var(--card-bg); padding: 1.5rem 1.75rem; border-radius: 14px; box-shadow: 0 18px 45px rgba(15,23,42,0.12); border: 1px solid rgba(148,163,184,.35); }
+    p.lead { margin: 0 0 1.25rem 0; color: var(--text-subtle); font-size: .95rem; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem 1.75rem; margin-bottom: 1.25rem; }
+    .field { display: flex; flex-direction: column; gap: .25rem; }
+    label { font-size: .85rem; font-weight: 600; color: #111827; }
+    .hint { font-size: .78rem; color: var(--text-subtle); }
+
+    .input-shell { position: relative; }
+    .input-shell span.prefix { position: absolute; left: .65rem; top: 50%; transform: translateY(-50%); font-size: .9rem; color: #6b7280; }
+    input[type="text"], input[type="number"] {
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      padding: .5rem .65rem;
+      font-size: .9rem;
+      outline: none;
+      transition: border-color .15s, box-shadow .15s, background-color .15s;
+      background-color: #f9fafb;
+    }
+    .input-shell input.with-prefix { padding-left: 1.6rem; }
+    input:focus { border-color: var(--accent); box-shadow: 0 0 0 1px rgba(37,99,235,.15); background-color: #ffffff; }
+
+    button.primary {
+      margin-top: .25rem;
+      padding: .55rem 1.1rem;
+      font-size: .9rem;
+      cursor: pointer;
+      border-radius: 999px;
+      border: none;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #ffffff;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      box-shadow: 0 10px 30px rgba(37,99,235,.35);
+    }
+    button.primary span.icon { font-size: 1.05rem; line-height: 1; }
+
+    table { border-collapse: collapse; margin-top: 1.25rem; width: 100%; background: #ffffff; border-radius: 10px; overflow: hidden; border: 1px solid rgba(148,163,184,.4); }
+    th, td { padding: .5rem .6rem; font-size: .85rem; }
+    thead { background: #f3f4f6; }
+    tbody tr:nth-child(even) { background: #f9fafb; }
+    th:first-child, td:first-child { text-align: left; }
+    th:not(:first-child), td:not(:first-child) { text-align: center; }
+
+    .pill-strip { display: inline-flex; gap: .35rem; align-items: center; padding: .25rem .55rem; border-radius: 999px; background: var(--accent-soft); color: #1e3a8a; font-size: .78rem; margin-bottom: .35rem; }
+
+    .footer-note { margin-top: 1rem; font-size: .78rem; color: var(--text-subtle); line-height: 1.5; }
+
+    @media (max-width: 640px) {
+      body { padding: 1rem; }
+      .card { padding: 1.25rem 1.15rem; border-radius: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <div class="card">
+      <div class="pill-strip">
+        <span>Individual (1040) Tax Returns</span>
+      </div>
+      <h1>Penalty & Interest Calculator</h1>
+      <p class="lead">Enter an unpaid balance. We estimate what you would owe if you pay on the 15th of each month from May through September using current IRS short‑term rates.</p>
+
+      <div class="grid">
+        <div class="field">
+          <label for="balance">Unpaid balance</label>
+          <div class="input-shell">
+            <span class="prefix">$</span>
+            <input id="balance" class="with-prefix" type="text" inputmode="numeric" value="73,284" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Original due date</label>
+          <div>April 15</div>
+          <div class="hint">Assumes the return was filed on time (no failure‑to‑file penalty).</div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="field">
+          <label for="penRate">Failure‑to‑pay penalty (% per month)</label>
+          <input id="penRate" type="number" step="0.1" value="0.5" />
+          <div class="hint">These are the latest default rates commonly used by the IRS for unpaid balances.</div>
+        </div>
+        <div class="field">
+          <label for="intRate">Interest rate (% per year)</label>
+          <input id="intRate" type="number" step="0.1" value="7.0" />
+          <div class="hint">These are the latest default rates commonly used by the IRS for unpaid balances.</div>
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button class="primary" onclick="runCalc()"><span class="icon">➜</span><span>Update estimates</span></button>
+        </div>
+      </div>
+
+      <table id="results" style="display:none;">
+        <thead>
+          <tr>
+            <th>Payment date</th>
+            <th>Penalty</th>
+            <th>Interest</th>
+            <th>Total addl. cost</th>
+            <th>Total due</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <div class="footer-note">
+        This tool is for planning only and uses a flat penalty and interest rate. It assumes a short‑term balance after a timely‑filed return. Actual IRS calculations can vary if rates change or additional penalties apply.
+      </div>
+    </div>
+  </div>
+
+<script>
+function parseDollarToInt(value) {
+  if (!value) return 0;
+  const cleaned = value.toString().replace(/[^0-9]/g, '');
+  return cleaned ? parseInt(cleaned, 10) : 0;
+}
+
+function formatDollarNoCents(value) {
+  const n = Math.round(value || 0);
+  return n.toLocaleString('en-US', { maximumFractionDigits: 0 });
+}
+
+function fmtMoney(n){
+  return n.toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function monthName(mIndex){
+  return ['January','February','March','April','May','June','July','August','September','October','November','December'][mIndex];
+}
+
+function buildPaymentDates() {
+  const year = new Date().getFullYear();
+  const months = [4,5,6,7,8]; // May–September (0-based)
+  return months.map(m => new Date(year, m, 15));
+}
+
+function formatDisplayDate(d) {
+  return `${monthName(d.getMonth())} ${d.getDate()}, ${d.getFullYear()}`;
+}
+
+function runCalc(){
+  const balanceRaw = document.getElementById('balance').value;
+  const balance = parseDollarToInt(balanceRaw);
+  const penRate = parseFloat(document.getElementById('penRate').value || '0') / 100; // monthly
+  const intRate = parseFloat(document.getElementById('intRate').value || '0') / 100; // annual
+
+  document.getElementById('balance').value = formatDollarNoCents(balance);
+
+  if(!balance){
+    alert('Enter an unpaid balance to see estimates.');
+    return;
+  }
+
+  const year = new Date().getFullYear();
+  const dueDate = new Date(year, 3, 15); // April 15 of current year
+  const payDates = buildPaymentDates();
+
+  const tbody = document.querySelector('#results tbody');
+  tbody.innerHTML = '';
+
+  payDates.forEach(payDate => {
+    const msPerDay = 24*60*60*1000;
+    const daysLate = Math.max(0, Math.round((payDate - dueDate) / msPerDay));
+    const monthsLate = daysLate <= 0 ? 0 : Math.ceil(daysLate / 30);
+
+    const penalty = balance * penRate * monthsLate;
+    const dailyRate = intRate / 365;
+    const interest = daysLate <= 0 ? 0 : balance * (Math.pow(1 + dailyRate, daysLate) - 1);
+    const totalAdd = penalty + interest;
+    const totalDue = balance + totalAdd;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${formatDisplayDate(payDate)}</td>
+      <td>$${fmtMoney(penalty)}</td>
+      <td>$${fmtMoney(interest)}</td>
+      <td>$${fmtMoney(totalAdd)}</td>
+      <td>$${fmtMoney(totalDue)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('results').style.display = tbody.children.length ? 'table' : 'none';
+}
+
+runCalc();
+</script>
+</body>
+</html>
