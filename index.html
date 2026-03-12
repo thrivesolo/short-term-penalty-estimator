@@ -604,7 +604,7 @@ function formatDollarNoCents(value) {
 }
 
 function fmtMoney(n){
-  return n.toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2});
+  return Math.round(n).toLocaleString('en-US',{minimumFractionDigits:0, maximumFractionDigits:0});
 }
 
 function monthName(mIndex){
